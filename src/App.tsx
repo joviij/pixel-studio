@@ -97,7 +97,7 @@ function App() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const isPaintingRef = useRef(false);
   const [pixels, setPixels] = useState<string[]>(() => createEmptyPixels());
-  const [selectedColor, setSelectedColor] = useState('#111827');
+  const [selectedColor, setSelectedColor] = useState('#000000');
   const [tool, setTool] = useState<Tool>('brush');
   const [projectName, setProjectName] = useState('Untitled');
   const [activeProjectId, setActiveProjectId] = useState<number | undefined>(undefined);
