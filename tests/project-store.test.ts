@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  deleteProjectFromDb,
   getProjectFromDb,
   initializeProjectSchema,
   listProjectsFromDb,
@@ -74,6 +75,17 @@ class FakeStatement {
       return { changes: 1, lastInsertRowid: BigInt(id) };
     }
 
+    if (this.sql.includes('DELETE FROM projects WHERE id = ?')) {
+      const [id] = args as [number];
+      const index = this.rows.findIndex((entry) => entry.id === id);
+      if (index < 0) {
+        return { changes: 0, lastInsertRowid: 0n };
+      }
+
+      this.rows.splice(index, 1);
+      return { changes: 1, lastInsertRowid: BigInt(id) };
+    }
+
     throw new Error(`Unsupported run() query: ${this.sql}`);
   }
 }
@@ -139,5 +151,27 @@ describe('project save/load', () => {
     const all = listProjectsFromDb(db as never);
     expect(all).toHaveLength(1);
     expect(all[0]?.id).toBe(initial.id);
+  });
+
+  it('deletes a project by id', () => {
+    const db = new FakeDatabase();
+    initializeProjectSchema(db as never);
+
+    const first = saveProjectToDb(db as never, {
+      name: 'One',
+      pixels: makePixels('#111111')
+    });
+    const second = saveProjectToDb(db as never, {
+      name: 'Two',
+      pixels: makePixels('#222222')
+    });
+
+    const deleted = deleteProjectFromDb(db as never, first.id);
+    expect(deleted).toBe(true);
+    expect(getProjectFromDb(db as never, first.id)).toBeNull();
+    expect(getProjectFromDb(db as never, second.id)?.name).toBe('Two');
+
+    const missingDelete = deleteProjectFromDb(db as never, 999999);
+    expect(missingDelete).toBe(false);
   });
 });

@@ -36,15 +36,16 @@ function App() {
 
   const canSave = useMemo(() => projectName.trim().length > 0, [projectName]);
 
-  const { projects, status, handleNew, handleClear, handleSave, handleLoad, handleExport } = useProjectActions({
-    activeProjectId,
-    projectName,
-    pixels,
-    canSave,
-    setActiveProjectId,
-    setProjectName,
-    setPixels
-  });
+  const { projects, status, handleNew, handleClear, handleSave, handleLoad, handleDelete, handleExport } =
+    useProjectActions({
+      activeProjectId,
+      projectName,
+      pixels,
+      canSave,
+      setActiveProjectId,
+      setProjectName,
+      setPixels
+    });
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -167,6 +168,7 @@ function App() {
           onClear={handleClear}
           onLoad={handleLoad}
           onSave={handleSave}
+          onDelete={handleDelete}
           onExport={handleExport}
         />
       }

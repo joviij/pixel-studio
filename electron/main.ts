@@ -1,7 +1,7 @@
 import path from 'node:path';
 import fs from 'node:fs/promises';
 import { app, BrowserWindow, dialog, ipcMain } from 'electron';
-import { closeDb, getProject, listProjects, saveProject } from './db';
+import { closeDb, deleteProject, getProject, listProjects, saveProject } from './db';
 import type { SaveProjectInput } from './types';
 
 const PIXEL_COUNT = 32 * 32;
@@ -66,6 +66,14 @@ app.whenReady().then(() => {
     };
 
     return saveProject(normalized);
+  });
+
+  ipcMain.handle('projects:delete', (_event, id: number) => {
+    if (!Number.isInteger(id) || id <= 0) {
+      throw new Error('Invalid project id.');
+    }
+
+    return deleteProject(id);
   });
 
   ipcMain.handle('dialog:savePng', async () => {

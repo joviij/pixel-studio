@@ -92,6 +92,36 @@ export function useProjectActions({
     }
   }, [activeProjectId, setPixels, setProjectName]);
 
+  const handleDelete = useCallback(async () => {
+    if (!activeProjectId) {
+      setStatus('Select a project to delete.');
+      return;
+    }
+
+    const target = projects.find((project) => project.id === activeProjectId);
+    const label = target ? `#${target.id} "${target.name}"` : `#${activeProjectId}`;
+    const confirmed = window.confirm(`Delete project ${label}? This cannot be undone.`);
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      const deleted = await window.pixelStudio.deleteProject(activeProjectId);
+      if (!deleted) {
+        setStatus('Project was not found.');
+        return;
+      }
+
+      setActiveProjectId(undefined);
+      setProjectName('Untitled');
+      setPixels(createEmptyPixels());
+      await refreshProjects();
+      setStatus(`Deleted project ${label}`);
+    } catch (error: unknown) {
+      setStatus(`Delete failed: ${String(error)}`);
+    }
+  }, [activeProjectId, projects, refreshProjects, setActiveProjectId, setPixels, setProjectName]);
+
   const handleExport = useCallback(async () => {
     try {
       const filePath = await window.pixelStudio.chooseExportPath();
@@ -116,6 +146,7 @@ export function useProjectActions({
     handleClear,
     handleSave,
     handleLoad,
+    handleDelete,
     handleExport
   };
 }

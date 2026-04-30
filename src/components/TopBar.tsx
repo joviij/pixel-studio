@@ -12,6 +12,7 @@ type TopBarProps = {
   onClear: () => void;
   onLoad: () => void;
   onSave: () => void;
+  onDelete: () => void;
   onExport: () => void;
 };
 
@@ -26,6 +27,7 @@ export function TopBar({
   onClear,
   onLoad,
   onSave,
+  onDelete,
   onExport
 }: TopBarProps) {
   return (
@@ -67,6 +69,15 @@ export function TopBar({
           <button type="button" className="icon-button" onClick={onSave} disabled={!canSave} title="Save project">
             <Icon name="save" size={16} className="ui-icon" />
             <span>Save</span>
+          </button>
+          <button
+            type="button"
+            className="icon-button"
+            onClick={onDelete}
+            disabled={!activeProjectId}
+            title="Delete selected project"
+          >
+            <span>Delete</span>
           </button>
           <button type="button" className="icon-button" onClick={onExport} title="Export PNG">
             <Icon name="export" size={16} className="ui-icon" />

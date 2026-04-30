@@ -1,6 +1,6 @@
 # Pixel Studio MVP
 
-A minimal desktop pixel art editor built with Electron + Vite + React + TypeScript.
+A minimal desktop pixel art editor built with Electron + Vite + React + TypeScript. This is an entirely vibe-coded app. Part of the goal was to just test how fast + semi-good vibe coded output app can product working applications. 
 
 ## MVP Features
 

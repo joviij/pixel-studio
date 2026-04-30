@@ -86,3 +86,8 @@ export function saveProjectToDb(
 
   return inserted;
 }
+
+export function deleteProjectFromDb(database: Database.Database, id: number): boolean {
+  const result = database.prepare('DELETE FROM projects WHERE id = ?').run(id);
+  return result.changes > 0;
+}

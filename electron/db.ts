@@ -4,6 +4,7 @@ import { app } from 'electron';
 import Database from 'better-sqlite3';
 import type { ProjectRecord, ProjectSummary, SaveProjectInput } from './types';
 import {
+  deleteProjectFromDb,
   getProjectFromDb,
   initializeProjectSchema,
   listProjectsFromDb,
@@ -11,13 +12,19 @@ import {
 } from './project-store';
 
 const DB_NAME = 'pixel-studio.sqlite';
+const PROJECT_DATA_DIR = 'data';
 
 let db: Database.Database | null = null;
 
+function getProjectDatabaseDirectory(): string {
+  const projectDataDir = path.join(app.getAppPath(), PROJECT_DATA_DIR);
+  fs.mkdirSync(projectDataDir, { recursive: true });
+  return projectDataDir;
+}
+
+
 function getDatabaseFilePath(): string {
-  const userDataDir = app.getPath('userData');
-  fs.mkdirSync(userDataDir, { recursive: true });
-  return path.join(userDataDir, DB_NAME);
+  return path.join(getProjectDatabaseDirectory(), DB_NAME);
 }
 
 function getDb(): Database.Database {
@@ -43,6 +50,10 @@ export function getProject(id: number): ProjectRecord | null {
 
 export function saveProject(input: SaveProjectInput): ProjectRecord {
   return saveProjectToDb(getDb(), input);
+}
+
+export function deleteProject(id: number): boolean {
+  return deleteProjectFromDb(getDb(), id);
 }
 
 export function closeDb(): void {

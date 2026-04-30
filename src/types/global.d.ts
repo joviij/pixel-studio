@@ -6,6 +6,7 @@ declare global {
       listProjects: () => Promise<ProjectSummary[]>;
       getProject: (id: number) => Promise<ProjectRecord | null>;
       saveProject: (input: SaveProjectInput) => Promise<ProjectRecord>;
+      deleteProject: (id: number) => Promise<boolean>;
       chooseExportPath: () => Promise<string | null>;
       writePng: (filePath: string, bytes: Uint8Array) => Promise<boolean>;
     };
