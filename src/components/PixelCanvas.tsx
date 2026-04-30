@@ -1,12 +1,13 @@
-import type { PointerEventHandler, RefObject } from 'react';
+import type { PointerEventHandler, Ref } from 'react';
 
 type PixelCanvasProps = {
-  canvasRef: RefObject<HTMLCanvasElement | null>;
+  canvasRef: Ref<HTMLCanvasElement>;
   width: number;
   height: number;
   onPointerDown: PointerEventHandler<HTMLCanvasElement>;
   onPointerMove: PointerEventHandler<HTMLCanvasElement>;
   onPointerUp: PointerEventHandler<HTMLCanvasElement>;
+  onPointerLeave: PointerEventHandler<HTMLCanvasElement>;
 };
 
 export function PixelCanvas({
@@ -15,19 +16,19 @@ export function PixelCanvas({
   height,
   onPointerDown,
   onPointerMove,
-  onPointerUp
+  onPointerUp,
+  onPointerLeave
 }: PixelCanvasProps) {
   return (
-    <main className="workspace">
-      <canvas
-        ref={canvasRef}
-        width={width}
-        height={height}
-        onPointerDown={onPointerDown}
-        onPointerMove={onPointerMove}
-        onPointerUp={onPointerUp}
-        onPointerLeave={onPointerUp}
-      />
-    </main>
+    <canvas
+      ref={canvasRef}
+      width={width}
+      height={height}
+      className="pixel-canvas"
+      onPointerDown={onPointerDown}
+      onPointerMove={onPointerMove}
+      onPointerUp={onPointerUp}
+      onPointerLeave={onPointerLeave}
+    />
   );
 }

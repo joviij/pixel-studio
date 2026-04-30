@@ -37,8 +37,12 @@ export function cellFromPointer(
 export function drawGrid(ctx: CanvasRenderingContext2D, pixels: string[]): void {
   ctx.clearRect(0, 0, GRID_SIZE * SCALE, GRID_SIZE * SCALE);
 
-  ctx.fillStyle = '#ffffff';
-  ctx.fillRect(0, 0, GRID_SIZE * SCALE, GRID_SIZE * SCALE);
+  for (let y = 0; y < GRID_SIZE; y += 1) {
+    for (let x = 0; x < GRID_SIZE; x += 1) {
+      ctx.fillStyle = (x + y) % 2 === 0 ? '#ffffff' : '#f1f1f1';
+      ctx.fillRect(x * SCALE, y * SCALE, SCALE, SCALE);
+    }
+  }
 
   for (let y = 0; y < GRID_SIZE; y += 1) {
     for (let x = 0; x < GRID_SIZE; x += 1) {
@@ -50,7 +54,7 @@ export function drawGrid(ctx: CanvasRenderingContext2D, pixels: string[]): void 
     }
   }
 
-  ctx.strokeStyle = '#e5e7eb';
+  ctx.strokeStyle = '#c8ccd0';
   ctx.lineWidth = 1;
 
   for (let i = 0; i <= GRID_SIZE; i += 1) {

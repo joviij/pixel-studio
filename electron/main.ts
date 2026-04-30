@@ -16,8 +16,8 @@ function validatePixelGrid(pixels: unknown): pixels is string[] {
 
 function createWindow(): void {
   const win = new BrowserWindow({
-    width: 1000,
-    height: 760,
+    width: 1200,
+    height: 900,
     minWidth: 900,
     minHeight: 640,
     webPreferences: {

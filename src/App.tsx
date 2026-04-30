@@ -1,5 +1,15 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { PointerEvent } from 'react';
+import { AppShell } from './components/AppShell';
+import { CanvasWorkspace } from './components/CanvasWorkspace';
+import { ColorPanel } from './components/ColorPanel';
+import { LayersPanel } from './components/LayersPanel';
+import { PixelCanvas } from './components/PixelCanvas';
+import { PreviewPanel } from './components/PreviewPanel';
+import { StatusBar } from './components/StatusBar';
+import { ToolsBar } from './components/ToolsBar';
+import { TopBar } from './components/TopBar';
+import { useProjectActions } from './hooks/useProjectActions';
 import {
   EMPTY_COLOR,
   GRID_SIZE,
@@ -11,22 +21,22 @@ import {
   type Cell,
   type Tool
 } from './pixel-grid';
-import { ControlPanel } from './components/ControlPanel';
-import { PixelCanvas } from './components/PixelCanvas';
-import { useProjectActions } from './hooks/useProjectActions';
 
 function App() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const isPaintingRef = useRef(false);
+
   const [pixels, setPixels] = useState<string[]>(() => createEmptyPixels());
   const [selectedColor, setSelectedColor] = useState('#000000');
+  const [secondaryColor] = useState('#ffffff');
   const [tool, setTool] = useState<Tool>('brush');
   const [projectName, setProjectName] = useState('Untitled');
   const [activeProjectId, setActiveProjectId] = useState<number | undefined>(undefined);
+  const [cursorCell, setCursorCell] = useState<Cell | null>(null);
 
   const canSave = useMemo(() => projectName.trim().length > 0, [projectName]);
 
-  const { projects, status, handleClear, handleSave, handleLoad, handleExport } = useProjectActions({
+  const { projects, status, handleNew, handleClear, handleSave, handleLoad, handleExport } = useProjectActions({
     activeProjectId,
     projectName,
     pixels,
@@ -68,6 +78,18 @@ function App() {
     [selectedColor, tool]
   );
 
+  const updateCursor = useCallback((event: PointerEvent<HTMLCanvasElement>) => {
+    const canvas = canvasRef.current;
+    if (!canvas) {
+      setCursorCell(null);
+      return null;
+    }
+
+    const cell = cellFromPointer(canvas, event.clientX, event.clientY);
+    setCursorCell(cell);
+    return cell;
+  }, []);
+
   const handlePointerDown = useCallback(
     (event: PointerEvent<HTMLCanvasElement>) => {
       const canvas = canvasRef.current;
@@ -78,40 +100,47 @@ function App() {
       canvas.setPointerCapture(event.pointerId);
       isPaintingRef.current = true;
 
-      const cell = cellFromPointer(canvas, event.clientX, event.clientY);
+      const cell = updateCursor(event);
       if (cell) {
         paintCell(cell);
       }
     },
-    [paintCell]
+    [paintCell, updateCursor]
   );
 
   const handlePointerMove = useCallback(
     (event: PointerEvent<HTMLCanvasElement>) => {
-      if (!isPaintingRef.current) {
+      const cell = updateCursor(event);
+      if (!isPaintingRef.current || !cell) {
         return;
       }
 
-      const canvas = canvasRef.current;
-      if (!canvas) {
-        return;
-      }
-
-      const cell = cellFromPointer(canvas, event.clientX, event.clientY);
-      if (cell) {
-        paintCell(cell);
-      }
+      paintCell(cell);
     },
-    [paintCell]
+    [paintCell, updateCursor]
   );
 
-  const handlePointerUp = useCallback((event: PointerEvent<HTMLCanvasElement>) => {
+  const handlePointerUp = useCallback(
+    (event: PointerEvent<HTMLCanvasElement>) => {
+      const canvas = canvasRef.current;
+      if (canvas && canvas.hasPointerCapture(event.pointerId)) {
+        canvas.releasePointerCapture(event.pointerId);
+      }
+
+      isPaintingRef.current = false;
+      updateCursor(event);
+    },
+    [updateCursor]
+  );
+
+  const handlePointerLeave = useCallback((event: PointerEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;
     if (canvas && canvas.hasPointerCapture(event.pointerId)) {
       canvas.releasePointerCapture(event.pointerId);
     }
 
     isPaintingRef.current = false;
+    setCursorCell(null);
   }, []);
 
   const handleProjectSelectChange = useCallback((raw: string) => {
@@ -125,34 +154,53 @@ function App() {
   }, []);
 
   return (
-    <div className="app">
-      <ControlPanel
-        projectName={projectName}
-        activeProjectId={activeProjectId}
-        projects={projects}
-        tool={tool}
-        selectedColor={selectedColor}
-        canSave={canSave}
-        status={status}
-        onProjectNameChange={setProjectName}
-        onProjectSelectChange={handleProjectSelectChange}
-        onToolChange={setTool}
-        onColorChange={setSelectedColor}
-        onClear={handleClear}
-        onSave={handleSave}
-        onLoad={handleLoad}
-        onExport={handleExport}
-      />
-
-      <PixelCanvas
-        canvasRef={canvasRef}
-        width={GRID_SIZE * SCALE}
-        height={GRID_SIZE * SCALE}
-        onPointerDown={handlePointerDown}
-        onPointerMove={handlePointerMove}
-        onPointerUp={handlePointerUp}
-      />
-    </div>
+    <AppShell
+      topBar={
+        <TopBar
+          projectName={projectName}
+          activeProjectId={activeProjectId}
+          projects={projects}
+          canSave={canSave}
+          onProjectNameChange={setProjectName}
+          onProjectSelectChange={handleProjectSelectChange}
+          onNew={handleNew}
+          onClear={handleClear}
+          onLoad={handleLoad}
+          onSave={handleSave}
+          onExport={handleExport}
+        />
+      }
+      leftSidebar={
+        <>
+          <ToolsBar tool={tool} onToolChange={setTool} />
+          <ColorPanel
+            primaryColor={selectedColor}
+            secondaryColor={secondaryColor}
+            onPrimaryColorChange={setSelectedColor}
+          />
+        </>
+      }
+      workspace={
+        <CanvasWorkspace>
+          <PixelCanvas
+            canvasRef={canvasRef}
+            width={GRID_SIZE * SCALE}
+            height={GRID_SIZE * SCALE}
+            onPointerDown={handlePointerDown}
+            onPointerMove={handlePointerMove}
+            onPointerUp={handlePointerUp}
+            onPointerLeave={handlePointerLeave}
+          />
+        </CanvasWorkspace>
+      }
+      rightSidebar={
+        <>
+          <PreviewPanel pixels={pixels} />
+          <LayersPanel />
+        </>
+      }
+      statusBar={<StatusBar cursorCell={cursorCell} tool={tool} status={status} gridSize={GRID_SIZE} />}
+    />
   );
 }
 

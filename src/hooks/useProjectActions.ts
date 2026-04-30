@@ -41,6 +41,13 @@ export function useProjectActions({
     setStatus('Canvas cleared');
   }, [setPixels]);
 
+  const handleNew = useCallback(() => {
+    setPixels(createEmptyPixels());
+    setActiveProjectId(undefined);
+    setProjectName('Untitled');
+    setStatus('New project');
+  }, [setActiveProjectId, setPixels, setProjectName]);
+
   const handleSave = useCallback(async () => {
     if (!canSave) {
       setStatus('Name is required to save.');
@@ -105,6 +112,7 @@ export function useProjectActions({
   return {
     projects,
     status,
+    handleNew,
     handleClear,
     handleSave,
     handleLoad,
