@@ -1,4 +1,5 @@
 import type { ProjectSummary } from '../../electron/types';
+import { useCallback, useState } from 'react';
 import { Icon } from './Icon';
 
 type TopBarProps = {
@@ -7,10 +8,9 @@ type TopBarProps = {
   projects: ProjectSummary[];
   canSave: boolean;
   onProjectNameChange: (name: string) => void;
-  onProjectSelectChange: (value: string) => void;
   onNew: () => void;
   onClear: () => void;
-  onLoad: () => void;
+  onLoad: (projectId?: number) => void | Promise<void>;
   onSave: () => void;
   onDelete: () => void;
   onExport: () => void;
@@ -22,7 +22,6 @@ export function TopBar({
   projects,
   canSave,
   onProjectNameChange,
-  onProjectSelectChange,
   onNew,
   onClear,
   onLoad,
@@ -30,6 +29,24 @@ export function TopBar({
   onDelete,
   onExport
 }: TopBarProps) {
+  const [isProjectPickerOpen, setIsProjectPickerOpen] = useState(false);
+
+  const openProjectPicker = useCallback(() => {
+    setIsProjectPickerOpen(true);
+  }, []);
+
+  const closeProjectPicker = useCallback(() => {
+    setIsProjectPickerOpen(false);
+  }, []);
+
+  const handleProjectOpen = useCallback(
+    (projectId: number) => {
+      void onLoad(projectId);
+      closeProjectPicker();
+    },
+    [closeProjectPicker, onLoad]
+  );
+
   return (
     <header className="top-bar">
       <div className="menu-row" role="menubar" aria-label="Application menu">
@@ -59,9 +76,8 @@ export function TopBar({
           <button
             type="button"
             className="icon-button"
-            onClick={onLoad}
-            disabled={!activeProjectId}
-            title="Load selected project"
+            onClick={openProjectPicker}
+            title="Open project"
           >
             <Icon name="open" size={16} className="ui-icon" />
             <span>Open</span>
@@ -75,7 +91,7 @@ export function TopBar({
             className="icon-button"
             onClick={onDelete}
             disabled={!activeProjectId}
-            title="Delete selected project"
+            title="Delete current project"
           >
             <span>Delete</span>
           </button>
@@ -123,21 +139,44 @@ export function TopBar({
             placeholder="Project name"
             aria-label="Project name"
           />
-          <select
-            id="project-select"
-            value={activeProjectId ?? ''}
-            onChange={(event) => onProjectSelectChange(event.target.value)}
-            aria-label="Saved projects"
-          >
-            <option value="">New Project</option>
-            {projects.map((project) => (
-              <option key={project.id} value={project.id}>
-                #{project.id} {project.name}
-              </option>
-            ))}
-          </select>
         </div>
       </div>
+      {isProjectPickerOpen && (
+        <div className="project-picker-overlay" onClick={closeProjectPicker}>
+          <div
+            className="project-picker-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="project-picker-title"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="project-picker-head">
+              <h2 id="project-picker-title">Open Project</h2>
+              <button type="button" className="icon-button mini" onClick={closeProjectPicker}>
+                Close
+              </button>
+            </div>
+            {projects.length === 0 ? (
+              <p className="project-picker-empty">No saved projects yet.</p>
+            ) : (
+              <ul className="project-picker-list">
+                {projects.map((project) => (
+                  <li key={project.id}>
+                    <button
+                      type="button"
+                      className="project-picker-item"
+                      onClick={() => handleProjectOpen(project.id)}
+                    >
+                      <span>#{project.id}</span>
+                      <span>{project.name}</span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </div>
+      )}
     </header>
   );
 }

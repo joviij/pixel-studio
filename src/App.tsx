@@ -144,16 +144,6 @@ function App() {
     setCursorCell(null);
   }, []);
 
-  const handleProjectSelectChange = useCallback((raw: string) => {
-    if (raw === '') {
-      setActiveProjectId(undefined);
-      return;
-    }
-
-    const value = Number(raw);
-    setActiveProjectId(Number.isFinite(value) && value > 0 ? value : undefined);
-  }, []);
-
   return (
     <AppShell
       topBar={
@@ -163,7 +153,6 @@ function App() {
           projects={projects}
           canSave={canSave}
           onProjectNameChange={setProjectName}
-          onProjectSelectChange={handleProjectSelectChange}
           onNew={handleNew}
           onClear={handleClear}
           onLoad={handleLoad}

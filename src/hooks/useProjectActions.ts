@@ -70,31 +70,33 @@ export function useProjectActions({
     }
   }, [activeProjectId, canSave, pixels, projectName, refreshProjects, setActiveProjectId, setProjectName]);
 
-  const handleLoad = useCallback(async () => {
-    if (!activeProjectId) {
-      setStatus('Select a project to load.');
+  const handleLoad = useCallback(async (projectId?: number) => {
+    const idToLoad = projectId ?? activeProjectId;
+    if (!idToLoad) {
+      setStatus('Choose a project to load.');
       return;
     }
 
     try {
-      const project = await window.pixelStudio.getProject(activeProjectId);
+      const project = await window.pixelStudio.getProject(idToLoad);
       if (!project) {
         setStatus('Project was not found.');
         return;
       }
 
       const normalized = project.pixels.length === PIXEL_COUNT ? project.pixels : createEmptyPixels();
+      setActiveProjectId(project.id);
       setPixels(normalized);
       setProjectName(project.name);
       setStatus(`Loaded project #${project.id}`);
     } catch (error: unknown) {
       setStatus(`Load failed: ${String(error)}`);
     }
-  }, [activeProjectId, setPixels, setProjectName]);
+  }, [activeProjectId, setActiveProjectId, setPixels, setProjectName]);
 
   const handleDelete = useCallback(async () => {
     if (!activeProjectId) {
-      setStatus('Select a project to delete.');
+      setStatus('Load a project before deleting.');
       return;
     }
 

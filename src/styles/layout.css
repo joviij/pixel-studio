@@ -84,7 +84,7 @@
 .project-controls {
   margin-left: auto;
   display: grid;
-  grid-template-columns: 180px 220px;
+  grid-template-columns: 220px;
   gap: var(--spacing);
 }
 
@@ -93,6 +93,72 @@
 .layer-controls select {
   height: 32px;
   padding: 0 10px;
+}
+
+.project-picker-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  display: grid;
+  place-items: center;
+  z-index: 100;
+}
+
+.project-picker-modal {
+  width: min(520px, calc(100vw - 32px));
+  max-height: min(560px, calc(100vh - 32px));
+  display: grid;
+  grid-template-rows: auto 1fr;
+  gap: var(--spacing);
+  overflow: hidden;
+  padding: calc(var(--spacing) * 1.25);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: linear-gradient(180deg, #2d2e32 0%, #232428 100%);
+}
+
+.project-picker-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.project-picker-head h2 {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.project-picker-empty {
+  margin: 0;
+  color: var(--text-muted);
+}
+
+.project-picker-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 8px;
+  overflow: auto;
+}
+
+.project-picker-item {
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg-panel-elevated);
+  color: var(--text-main);
+  padding: 10px 12px;
+  text-align: left;
+  cursor: pointer;
+  display: grid;
+  grid-template-columns: 64px 1fr;
+  gap: 10px;
+}
+
+.project-picker-item:hover {
+  background: var(--hover);
 }
 
 .app-main {
@@ -414,6 +480,6 @@
   }
 
   .project-controls {
-    grid-template-columns: 150px 190px;
+    grid-template-columns: 190px;
   }
 }
