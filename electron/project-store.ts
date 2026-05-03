@@ -1,6 +1,6 @@
 import type Database from 'better-sqlite3';
 import type { ProjectRecord, ProjectSummary, SaveProjectInput } from './types';
-import { deserializePixels, serializePixels } from './project-serialization';
+import { deserializeProjectDocument, serializeProjectDocument } from './project-serialization';
 
 export function initializeProjectSchema(database: Database.Database): void {
   database.exec(`
@@ -36,19 +36,18 @@ export function getProjectFromDb(database: Database.Database, id: number): Proje
     return null;
   }
 
+  const document = deserializeProjectDocument(row.pixels);
+
   return {
     id: row.id,
     name: row.name,
-    pixels: deserializePixels(row.pixels),
+    document,
     updatedAt: row.updated_at
   };
 }
 
-export function saveProjectToDb(
-  database: Database.Database,
-  input: SaveProjectInput
-): ProjectRecord {
-  const payload = serializePixels(input.pixels);
+export function saveProjectToDb(database: Database.Database, input: SaveProjectInput): ProjectRecord {
+  const payload = serializeProjectDocument(input.document);
 
   if (typeof input.id === 'number') {
     const updateResult = database

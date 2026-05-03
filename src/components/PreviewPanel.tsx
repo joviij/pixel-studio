@@ -1,14 +1,14 @@
 import { useEffect, useRef } from 'react';
-import { renderToExportCanvas } from '../pixel-grid';
+import { renderDocumentToExportCanvas, type ProjectDocument } from '../pixel-grid';
 import { Icon } from './Icon';
 
 type PreviewPanelProps = {
-  pixels: string[];
+  projectDocument: ProjectDocument;
 };
 
 const PREVIEW_SIZE = 144;
 
-export function PreviewPanel({ pixels }: PreviewPanelProps) {
+export function PreviewPanel({ projectDocument }: PreviewPanelProps) {
   const previewRef = useRef<HTMLCanvasElement | null>(null);
 
   useEffect(() => {
@@ -22,11 +22,11 @@ export function PreviewPanel({ pixels }: PreviewPanelProps) {
       return;
     }
 
-    const source = renderToExportCanvas(pixels);
+    const source = renderDocumentToExportCanvas(projectDocument);
     ctx.clearRect(0, 0, PREVIEW_SIZE, PREVIEW_SIZE);
     ctx.imageSmoothingEnabled = false;
     ctx.drawImage(source, 0, 0, PREVIEW_SIZE, PREVIEW_SIZE);
-  }, [pixels]);
+  }, [projectDocument]);
 
   return (
     <section className="panel" aria-label="Preview panel">

@@ -412,6 +412,16 @@
   margin-bottom: var(--spacing);
 }
 
+.layer-opacity {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: var(--spacing);
+  font-size: 0.82rem;
+  color: var(--text-muted);
+}
+
 .layers-list {
   list-style: none;
   margin: 0;
@@ -422,7 +432,7 @@
 
 .layer-row {
   display: grid;
-  grid-template-columns: 20px 1fr 20px;
+  grid-template-columns: 24px 1fr 24px;
   gap: 8px;
   align-items: center;
   border: 1px solid var(--border);
@@ -440,14 +450,58 @@
   opacity: 0.7;
 }
 
-.layer-icon,
-.layer-lock {
-  font-size: 0.75rem;
+.layer-icon-button {
+  width: 24px;
+  height: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg-panel-elevated);
   color: var(--text-muted);
+  cursor: pointer;
+  padding: 0;
+}
+
+.layer-icon-button:hover {
+  background: var(--hover);
+}
+
+.layer-name-button {
+  border: 0;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  padding: 0;
+  min-width: 0;
+}
+
+.layer-name-button input {
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg-panel-elevated);
+  color: var(--text-main);
+  height: 24px;
+  padding: 0 6px;
 }
 
 .layer-name {
   font-size: 0.86rem;
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.layer-unlocked-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  border: 1px solid var(--text-muted);
+  opacity: 0.7;
 }
 
 .status-bar {

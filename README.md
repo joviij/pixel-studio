@@ -8,6 +8,8 @@ A minimal desktop pixel art editor built with Electron + Vite + React + TypeScri
 - Click + drag painting
 - Color picker
 - Eraser
+- Layer stack (add/delete/reorder/rename)
+- Layer visibility, lock, and opacity
 - Clear canvas
 - Save/load projects to local SQLite (`better-sqlite3`)
 - Export PNG

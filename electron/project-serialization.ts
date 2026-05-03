@@ -1,16 +1,10 @@
-export function serializePixels(pixels: string[]): string {
-  return JSON.stringify(pixels);
+import type { ProjectDocumentRecord } from './types';
+import { deserializeStoredProjectDocument, serializeStoredProjectDocument } from './project-adapter';
+
+export function serializeProjectDocument(document: ProjectDocumentRecord): string {
+  return serializeStoredProjectDocument(document);
 }
 
-export function deserializePixels(raw: string): string[] {
-  try {
-    const parsed = JSON.parse(raw);
-    if (Array.isArray(parsed)) {
-      return parsed;
-    }
-  } catch {
-    // Ignore parse errors and fallback to empty pixels.
-  }
-
-  return [];
+export function deserializeProjectDocument(raw: string): ProjectDocumentRecord {
+  return deserializeStoredProjectDocument(raw);
 }

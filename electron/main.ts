@@ -2,21 +2,11 @@ import path from 'node:path';
 import fs from 'node:fs/promises';
 import { app, BrowserWindow, dialog, ipcMain } from 'electron';
 import { closeDb, deleteProject, getProject, listProjects, saveProject } from './db';
-import type { SaveProjectInput } from './types';
-
-const PIXEL_COUNT = 32 * 32;
-
-function validatePixelGrid(pixels: unknown): pixels is string[] {
-  if (!Array.isArray(pixels) || pixels.length !== PIXEL_COUNT) {
-    return false;
-  }
-
-  return pixels.every((value) => typeof value === 'string');
-}
+import { parseSaveProjectInput } from './project-adapter';
 
 function createWindow(): void {
   const win = new BrowserWindow({
-    width: 1200,
+    width: 1300,
     height: 900,
     minWidth: 900,
     minHeight: 640,
@@ -50,20 +40,11 @@ app.whenReady().then(() => {
     return getProject(id);
   });
 
-  ipcMain.handle('projects:save', (_event, input: SaveProjectInput) => {
-    if (!input || typeof input.name !== 'string' || input.name.trim().length === 0) {
-      throw new Error('Project name is required.');
+  ipcMain.handle('projects:save', (_event, input: unknown) => {
+    const normalized = parseSaveProjectInput(input);
+    if (!normalized) {
+      throw new Error('Project payload is invalid.');
     }
-
-    if (!validatePixelGrid(input.pixels)) {
-      throw new Error('Pixel grid must be an array of 1024 color strings.');
-    }
-
-    const normalized: SaveProjectInput = {
-      id: typeof input.id === 'number' ? input.id : undefined,
-      name: input.name.trim(),
-      pixels: input.pixels
-    };
 
     return saveProject(normalized);
   });

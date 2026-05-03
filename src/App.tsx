@@ -14,10 +14,18 @@ import {
   EMPTY_COLOR,
   GRID_SIZE,
   SCALE,
+  addLayer,
   cellFromPointer,
-  createEmptyPixels,
-  drawGrid,
-  indexFromCell,
+  createDefaultDocument,
+  deleteLayer,
+  drawDocument,
+  moveLayer,
+  paintDocumentCell,
+  renameLayer,
+  setActiveLayer,
+  setLayerLock,
+  setLayerOpacity,
+  setLayerVisibility,
   type Cell,
   type Tool
 } from './pixel-grid';
@@ -26,7 +34,7 @@ function App() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const isPaintingRef = useRef(false);
 
-  const [pixels, setPixels] = useState<string[]>(() => createEmptyPixels());
+  const [projectDocument, setProjectDocument] = useState(createDefaultDocument);
   const [selectedColor, setSelectedColor] = useState('#000000');
   const [secondaryColor] = useState('#ffffff');
   const [tool, setTool] = useState<Tool>('brush');
@@ -36,15 +44,15 @@ function App() {
 
   const canSave = useMemo(() => projectName.trim().length > 0, [projectName]);
 
-  const { projects, status, handleNew, handleClear, handleSave, handleLoad, handleDelete, handleExport } =
+  const { projects, status, setStatus, handleNew, handleClear, handleSave, handleLoad, handleDelete, handleExport } =
     useProjectActions({
       activeProjectId,
       projectName,
-      pixels,
+      projectDocument,
       canSave,
       setActiveProjectId,
       setProjectName,
-      setPixels
+      setProjectDocument
     });
 
   useEffect(() => {
@@ -58,25 +66,23 @@ function App() {
       return;
     }
 
-    drawGrid(ctx, pixels);
-  }, [pixels]);
+    drawDocument(ctx, projectDocument);
+  }, [projectDocument]);
 
   const paintCell = useCallback(
     (cell: Cell) => {
       const nextColor = tool === 'eraser' ? EMPTY_COLOR : selectedColor;
 
-      setPixels((previous) => {
-        const idx = indexFromCell(cell);
-        if (previous[idx] === nextColor) {
-          return previous;
+      setProjectDocument((previous) => {
+        const result = paintDocumentCell(previous, cell, nextColor);
+        if (!result.changed && result.reason) {
+          setStatus(result.reason);
         }
 
-        const next = [...previous];
-        next[idx] = nextColor;
-        return next;
+        return result.document;
       });
     },
-    [selectedColor, tool]
+    [selectedColor, setStatus, tool]
   );
 
   const updateCursor = useCallback((event: PointerEvent<HTMLCanvasElement>) => {
@@ -144,6 +150,8 @@ function App() {
     setCursorCell(null);
   }, []);
 
+  const activeLayer = projectDocument.layers.find((layer) => layer.id === projectDocument.activeLayerId) ?? null;
+
   return (
     <AppShell
       topBar={
@@ -186,8 +194,44 @@ function App() {
       }
       rightSidebar={
         <>
-          <PreviewPanel pixels={pixels} />
-          <LayersPanel />
+          <PreviewPanel projectDocument={projectDocument} />
+          <LayersPanel
+            layers={projectDocument.layers}
+            activeLayerId={projectDocument.activeLayerId}
+            activeLayerOpacity={activeLayer?.opacity ?? 100}
+            canDeleteLayer={projectDocument.layers.length > 1}
+            canMoveLayerUp={
+              !!activeLayer &&
+              projectDocument.layers.findIndex((layer) => layer.id === activeLayer.id) <
+                projectDocument.layers.length - 1
+            }
+            canMoveLayerDown={
+              !!activeLayer && projectDocument.layers.findIndex((layer) => layer.id === activeLayer.id) > 0
+            }
+            onAddLayer={() => setProjectDocument((previous) => addLayer(previous))}
+            onDeleteLayer={() =>
+              setProjectDocument((previous) => deleteLayer(previous, previous.activeLayerId))
+            }
+            onMoveLayerUp={() =>
+              setProjectDocument((previous) => moveLayer(previous, previous.activeLayerId, 'up'))
+            }
+            onMoveLayerDown={() =>
+              setProjectDocument((previous) => moveLayer(previous, previous.activeLayerId, 'down'))
+            }
+            onSelectLayer={(layerId) => setProjectDocument((previous) => setActiveLayer(previous, layerId))}
+            onToggleVisibility={(layerId, visible) =>
+              setProjectDocument((previous) => setLayerVisibility(previous, layerId, visible))
+            }
+            onToggleLock={(layerId, locked) =>
+              setProjectDocument((previous) => setLayerLock(previous, layerId, locked))
+            }
+            onRenameLayer={(layerId, name) =>
+              setProjectDocument((previous) => renameLayer(previous, layerId, name))
+            }
+            onSetOpacity={(opacity) =>
+              setProjectDocument((previous) => setLayerOpacity(previous, previous.activeLayerId, opacity))
+            }
+          />
         </>
       }
       statusBar={<StatusBar cursorCell={cursorCell} tool={tool} status={status} gridSize={GRID_SIZE} />}

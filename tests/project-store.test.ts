@@ -100,6 +100,10 @@ class FakeDatabase {
   public prepare(sql: string): FakeStatement {
     return new FakeStatement(sql, this.rows);
   }
+
+  public seedRow(row: Row): void {
+    this.rows.push(row);
+  }
 }
 
 function makePixels(seed: string): string[] {
@@ -108,25 +112,43 @@ function makePixels(seed: string): string[] {
   );
 }
 
+function makeDocument(seed: string) {
+  return {
+    version: 2 as const,
+    activeLayerId: 'layer-1',
+    layers: [
+      {
+        id: 'layer-1',
+        name: 'Layer 1',
+        pixels: makePixels(seed),
+        visible: true,
+        locked: false,
+        opacity: 100
+      }
+    ]
+  };
+}
+
 describe('project save/load', () => {
-  it('saves and loads a project', () => {
+  it('saves and loads a project document', () => {
     const db = new FakeDatabase();
     initializeProjectSchema(db as never);
 
     const saved = saveProjectToDb(db as never, {
       name: 'Test Project',
-      pixels: makePixels('#112233')
+      document: makeDocument('#112233')
     });
 
     expect(saved.id).toBeGreaterThan(0);
     expect(saved.name).toBe('Test Project');
-    expect(saved.pixels).toHaveLength(PIXEL_COUNT);
+    expect(saved.document.layers).toHaveLength(1);
+    expect(saved.document.layers[0]?.pixels).toHaveLength(PIXEL_COUNT);
 
     const loaded = getProjectFromDb(db as never, saved.id);
     expect(loaded).not.toBeNull();
     expect(loaded?.id).toBe(saved.id);
     expect(loaded?.name).toBe('Test Project');
-    expect(loaded?.pixels).toEqual(saved.pixels);
+    expect(loaded?.document).toEqual(saved.document);
   });
 
   it('updates existing project when id exists', () => {
@@ -135,18 +157,18 @@ describe('project save/load', () => {
 
     const initial = saveProjectToDb(db as never, {
       name: 'Initial',
-      pixels: makePixels('#000000')
+      document: makeDocument('#000000')
     });
 
     const updated = saveProjectToDb(db as never, {
       id: initial.id,
       name: 'Updated',
-      pixels: makePixels('#abcdef')
+      document: makeDocument('#abcdef')
     });
 
     expect(updated.id).toBe(initial.id);
     expect(updated.name).toBe('Updated');
-    expect(updated.pixels[0]).toBe('#abcdef');
+    expect(updated.document.layers[0]?.pixels[0]).toBe('#abcdef');
 
     const all = listProjectsFromDb(db as never);
     expect(all).toHaveLength(1);
@@ -159,11 +181,11 @@ describe('project save/load', () => {
 
     const first = saveProjectToDb(db as never, {
       name: 'One',
-      pixels: makePixels('#111111')
+      document: makeDocument('#111111')
     });
     const second = saveProjectToDb(db as never, {
       name: 'Two',
-      pixels: makePixels('#222222')
+      document: makeDocument('#222222')
     });
 
     const deleted = deleteProjectFromDb(db as never, first.id);
@@ -173,5 +195,23 @@ describe('project save/load', () => {
 
     const missingDelete = deleteProjectFromDb(db as never, 999999);
     expect(missingDelete).toBe(false);
+  });
+
+  it('migrates legacy stored pixel arrays into a layered document', () => {
+    const db = new FakeDatabase();
+    initializeProjectSchema(db as never);
+
+    db.seedRow({
+      id: 42,
+      name: 'Legacy',
+      pixels: JSON.stringify(makePixels('#909090')),
+      updated_at: new Date().toISOString()
+    });
+
+    const loaded = getProjectFromDb(db as never, 42);
+    expect(loaded).not.toBeNull();
+    expect(loaded?.document.version).toBe(2);
+    expect(loaded?.document.layers).toHaveLength(1);
+    expect(loaded?.document.layers[0]?.pixels[0]).toBe('#909090');
   });
 });

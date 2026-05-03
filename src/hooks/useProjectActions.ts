@@ -1,26 +1,30 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { ProjectSummary } from '../../electron/types';
 import { dataUrlToBytes } from '../png-export';
-import { PIXEL_COUNT, createEmptyPixels, renderToExportCanvas } from '../pixel-grid';
+import {
+  createDefaultDocument,
+  renderDocumentToExportCanvas,
+  type ProjectDocument
+} from '../pixel-grid';
 
 type UseProjectActionsParams = {
   activeProjectId?: number;
   projectName: string;
-  pixels: string[];
+  projectDocument: ProjectDocument;
   canSave: boolean;
   setActiveProjectId: (id: number | undefined) => void;
   setProjectName: (name: string) => void;
-  setPixels: (pixels: string[]) => void;
+  setProjectDocument: (document: ProjectDocument) => void;
 };
 
 export function useProjectActions({
   activeProjectId,
   projectName,
-  pixels,
+  projectDocument,
   canSave,
   setActiveProjectId,
   setProjectName,
-  setPixels
+  setProjectDocument
 }: UseProjectActionsParams) {
   const [projects, setProjects] = useState<ProjectSummary[]>([]);
   const [status, setStatus] = useState('Ready');
@@ -37,16 +41,16 @@ export function useProjectActions({
   }, [refreshProjects]);
 
   const handleClear = useCallback(() => {
-    setPixels(createEmptyPixels());
+    setProjectDocument(createDefaultDocument());
     setStatus('Canvas cleared');
-  }, [setPixels]);
+  }, [setProjectDocument]);
 
   const handleNew = useCallback(() => {
-    setPixels(createEmptyPixels());
+    setProjectDocument(createDefaultDocument());
     setActiveProjectId(undefined);
     setProjectName('Untitled');
     setStatus('New project');
-  }, [setActiveProjectId, setPixels, setProjectName]);
+  }, [setActiveProjectId, setProjectDocument, setProjectName]);
 
   const handleSave = useCallback(async () => {
     if (!canSave) {
@@ -58,41 +62,44 @@ export function useProjectActions({
       const saved = await window.pixelStudio.saveProject({
         id: activeProjectId,
         name: projectName.trim(),
-        pixels
+        document: projectDocument
       });
 
       setActiveProjectId(saved.id);
       setProjectName(saved.name);
+      setProjectDocument(saved.document);
       await refreshProjects();
       setStatus(`Saved project #${saved.id}`);
     } catch (error: unknown) {
       setStatus(`Save failed: ${String(error)}`);
     }
-  }, [activeProjectId, canSave, pixels, projectName, refreshProjects, setActiveProjectId, setProjectName]);
+  }, [activeProjectId, canSave, projectDocument, projectName, refreshProjects, setActiveProjectId, setProjectDocument, setProjectName]);
 
-  const handleLoad = useCallback(async (projectId?: number) => {
-    const idToLoad = projectId ?? activeProjectId;
-    if (!idToLoad) {
-      setStatus('Choose a project to load.');
-      return;
-    }
-
-    try {
-      const project = await window.pixelStudio.getProject(idToLoad);
-      if (!project) {
-        setStatus('Project was not found.');
+  const handleLoad = useCallback(
+    async (projectId?: number) => {
+      const idToLoad = projectId ?? activeProjectId;
+      if (!idToLoad) {
+        setStatus('Choose a project to load.');
         return;
       }
 
-      const normalized = project.pixels.length === PIXEL_COUNT ? project.pixels : createEmptyPixels();
-      setActiveProjectId(project.id);
-      setPixels(normalized);
-      setProjectName(project.name);
-      setStatus(`Loaded project #${project.id}`);
-    } catch (error: unknown) {
-      setStatus(`Load failed: ${String(error)}`);
-    }
-  }, [activeProjectId, setActiveProjectId, setPixels, setProjectName]);
+      try {
+        const project = await window.pixelStudio.getProject(idToLoad);
+        if (!project) {
+          setStatus('Project was not found.');
+          return;
+        }
+
+        setActiveProjectId(project.id);
+        setProjectDocument(project.document);
+        setProjectName(project.name);
+        setStatus(`Loaded project #${project.id}`);
+      } catch (error: unknown) {
+        setStatus(`Load failed: ${String(error)}`);
+      }
+    },
+    [activeProjectId, setActiveProjectId, setProjectDocument, setProjectName]
+  );
 
   const handleDelete = useCallback(async () => {
     if (!activeProjectId) {
@@ -116,13 +123,13 @@ export function useProjectActions({
 
       setActiveProjectId(undefined);
       setProjectName('Untitled');
-      setPixels(createEmptyPixels());
+      setProjectDocument(createDefaultDocument());
       await refreshProjects();
       setStatus(`Deleted project ${label}`);
     } catch (error: unknown) {
       setStatus(`Delete failed: ${String(error)}`);
     }
-  }, [activeProjectId, projects, refreshProjects, setActiveProjectId, setPixels, setProjectName]);
+  }, [activeProjectId, projects, refreshProjects, setActiveProjectId, setProjectDocument, setProjectName]);
 
   const handleExport = useCallback(async () => {
     try {
@@ -132,18 +139,19 @@ export function useProjectActions({
         return;
       }
 
-      const exportCanvas = renderToExportCanvas(pixels);
+      const exportCanvas = renderDocumentToExportCanvas(projectDocument);
       const pngBytes = await dataUrlToBytes(exportCanvas.toDataURL('image/png'));
       await window.pixelStudio.writePng(filePath, pngBytes);
       setStatus(`Exported PNG to ${filePath}`);
     } catch (error: unknown) {
       setStatus(`Export failed: ${String(error)}`);
     }
-  }, [pixels]);
+  }, [projectDocument]);
 
   return {
     projects,
     status,
+    setStatus,
     handleNew,
     handleClear,
     handleSave,
