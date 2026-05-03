@@ -2,17 +2,7 @@
 
 A minimal desktop pixel art editor built with Electron + Vite + React + TypeScript. This is an entirely vibe-coded app. Part of the goal was to just test how fast + semi-good vibe coded output app can product working applications. 
 
-## MVP Features
-
-- 32x32 pixel canvas
-- Click + drag painting
-- Color picker
-- Eraser
-- Layer stack (add/delete/reorder/rename)
-- Layer visibility, lock, and opacity
-- Clear canvas
-- Save/load projects to local SQLite (`better-sqlite3`)
-- Export PNG
+Does vibe-coding actually speed up development? Or will it lead to hidden costs in the name of operational pain eventually cause "vibe-coded" apps to have to go through a manual write/inspection. One thing to note is the agent (Codex) was not really trained on my personal coding standards and this is sort of out of the box default behavior. 
 
 ## Tech Stack
 
@@ -21,13 +11,6 @@ A minimal desktop pixel art editor built with Electron + Vite + React + TypeScri
 - SQLite via `better-sqlite3`
 - Canvas API for drawing
 
-## Project Structure
-
-- `electron/main.ts`: Electron app lifecycle + IPC handlers
-- `electron/preload.ts`: Secure renderer bridge
-- `electron/db.ts`: SQLite setup and CRUD
-- `src/App.tsx`: Pixel editor UI and drawing logic
-- `src/types/global.d.ts`: Renderer typings for preload API
 
 ## Setup
 
