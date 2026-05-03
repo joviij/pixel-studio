@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { ProjectSummary } from '../../electron/types';
 import { dataUrlToBytes } from '../png-export';
+import type { DocumentUpdateOptions } from './useEditorDocument';
 import {
   createDefaultDocument,
   renderDocumentToExportCanvas,
@@ -12,9 +13,10 @@ type UseProjectActionsParams = {
   projectName: string;
   projectDocument: ProjectDocument;
   canSave: boolean;
+  setStatus: (status: string) => void;
   setActiveProjectId: (id: number | undefined) => void;
   setProjectName: (name: string) => void;
-  setProjectDocument: (document: ProjectDocument) => void;
+  setProjectDocument: (document: ProjectDocument, options?: DocumentUpdateOptions) => void;
 };
 
 export function useProjectActions({
@@ -22,12 +24,12 @@ export function useProjectActions({
   projectName,
   projectDocument,
   canSave,
+  setStatus,
   setActiveProjectId,
   setProjectName,
   setProjectDocument
 }: UseProjectActionsParams) {
   const [projects, setProjects] = useState<ProjectSummary[]>([]);
-  const [status, setStatus] = useState('Ready');
 
   const refreshProjects = useCallback(async () => {
     const items = await window.pixelStudio.listProjects();
@@ -38,19 +40,21 @@ export function useProjectActions({
     refreshProjects().catch((error: unknown) => {
       setStatus(`Failed to load projects: ${String(error)}`);
     });
-  }, [refreshProjects]);
+  }, [refreshProjects, setStatus]);
 
   const handleClear = useCallback(() => {
-    setProjectDocument(createDefaultDocument());
+    // Clear should be undoable from the current working state.
+    setProjectDocument(createDefaultDocument(), { mode: 'commit' });
     setStatus('Canvas cleared');
-  }, [setProjectDocument]);
+  }, [setProjectDocument, setStatus]);
 
   const handleNew = useCallback(() => {
-    setProjectDocument(createDefaultDocument());
+    // New project starts a fresh timeline.
+    setProjectDocument(createDefaultDocument(), { mode: 'reset' });
     setActiveProjectId(undefined);
     setProjectName('Untitled');
     setStatus('New project');
-  }, [setActiveProjectId, setProjectDocument, setProjectName]);
+  }, [setActiveProjectId, setProjectDocument, setProjectName, setStatus]);
 
   const handleSave = useCallback(async () => {
     if (!canSave) {
@@ -67,13 +71,24 @@ export function useProjectActions({
 
       setActiveProjectId(saved.id);
       setProjectName(saved.name);
-      setProjectDocument(saved.document);
+      // Replace current present snapshot without adding an extra undo step.
+      setProjectDocument(saved.document, { mode: 'replace' });
       await refreshProjects();
       setStatus(`Saved project #${saved.id}`);
     } catch (error: unknown) {
       setStatus(`Save failed: ${String(error)}`);
     }
-  }, [activeProjectId, canSave, projectDocument, projectName, refreshProjects, setActiveProjectId, setProjectDocument, setProjectName]);
+  }, [
+    activeProjectId,
+    canSave,
+    projectDocument,
+    projectName,
+    refreshProjects,
+    setActiveProjectId,
+    setProjectDocument,
+    setProjectName,
+    setStatus
+  ]);
 
   const handleLoad = useCallback(
     async (projectId?: number) => {
@@ -91,14 +106,15 @@ export function useProjectActions({
         }
 
         setActiveProjectId(project.id);
-        setProjectDocument(project.document);
+        // Loading a project should reset undo/redo to that loaded state.
+        setProjectDocument(project.document, { mode: 'reset' });
         setProjectName(project.name);
         setStatus(`Loaded project #${project.id}`);
       } catch (error: unknown) {
         setStatus(`Load failed: ${String(error)}`);
       }
     },
-    [activeProjectId, setActiveProjectId, setProjectDocument, setProjectName]
+    [activeProjectId, setActiveProjectId, setProjectDocument, setProjectName, setStatus]
   );
 
   const handleDelete = useCallback(async () => {
@@ -123,13 +139,14 @@ export function useProjectActions({
 
       setActiveProjectId(undefined);
       setProjectName('Untitled');
-      setProjectDocument(createDefaultDocument());
+      // After deletion we start a fresh untitled document timeline.
+      setProjectDocument(createDefaultDocument(), { mode: 'reset' });
       await refreshProjects();
       setStatus(`Deleted project ${label}`);
     } catch (error: unknown) {
       setStatus(`Delete failed: ${String(error)}`);
     }
-  }, [activeProjectId, projects, refreshProjects, setActiveProjectId, setProjectDocument, setProjectName]);
+  }, [activeProjectId, projects, refreshProjects, setActiveProjectId, setProjectDocument, setProjectName, setStatus]);
 
   const handleExport = useCallback(async () => {
     try {
@@ -146,12 +163,10 @@ export function useProjectActions({
     } catch (error: unknown) {
       setStatus(`Export failed: ${String(error)}`);
     }
-  }, [projectDocument]);
+  }, [projectDocument, setStatus]);
 
   return {
     projects,
-    status,
-    setStatus,
     handleNew,
     handleClear,
     handleSave,

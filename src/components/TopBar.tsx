@@ -7,6 +7,8 @@ type TopBarProps = {
   activeProjectId?: number;
   projects: ProjectSummary[];
   canSave: boolean;
+  canUndo: boolean;
+  canRedo: boolean;
   onProjectNameChange: (name: string) => void;
   onNew: () => void;
   onClear: () => void;
@@ -14,6 +16,8 @@ type TopBarProps = {
   onSave: () => void;
   onDelete: () => void;
   onExport: () => void;
+  onUndo: () => void;
+  onRedo: () => void;
 };
 
 export function TopBar({
@@ -21,13 +25,17 @@ export function TopBar({
   activeProjectId,
   projects,
   canSave,
+  canUndo,
+  canRedo,
   onProjectNameChange,
   onNew,
   onClear,
   onLoad,
   onSave,
   onDelete,
-  onExport
+  onExport,
+  onUndo,
+  onRedo
 }: TopBarProps) {
   const [isProjectPickerOpen, setIsProjectPickerOpen] = useState(false);
 
@@ -106,11 +114,17 @@ export function TopBar({
         </div>
 
         <div className="action-group">
-          <button type="button" className="icon-button" disabled title="Undo (not available in MVP)">
+          <button type="button" className="icon-button" onClick={onUndo} disabled={!canUndo} title="Undo (Ctrl/Cmd+Z)">
             <Icon name="undo" size={16} className="ui-icon" />
             <span>Undo</span>
           </button>
-          <button type="button" className="icon-button" disabled title="Redo (not available in MVP)">
+          <button
+            type="button"
+            className="icon-button"
+            onClick={onRedo}
+            disabled={!canRedo}
+            title="Redo (Ctrl+Y or Cmd/Ctrl+Shift+Z)"
+          >
             <Icon name="redo" size={16} className="ui-icon" />
             <span>Redo</span>
           </button>

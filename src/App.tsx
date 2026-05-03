@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { PointerEvent } from 'react';
 import { AppShell } from './components/AppShell';
 import { CanvasWorkspace } from './components/CanvasWorkspace';
 import { ColorPanel } from './components/ColorPanel';
@@ -9,6 +8,8 @@ import { PreviewPanel } from './components/PreviewPanel';
 import { StatusBar } from './components/StatusBar';
 import { ToolsBar } from './components/ToolsBar';
 import { TopBar } from './components/TopBar';
+import { useCanvasPainting } from './hooks/useCanvasPainting';
+import { useEditorDocument } from './hooks/useEditorDocument';
 import { useProjectActions } from './hooks/useProjectActions';
 import {
   EMPTY_COLOR,
@@ -32,24 +33,28 @@ import {
 
 function App() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const isPaintingRef = useRef(false);
-
-  const [projectDocument, setProjectDocument] = useState(createDefaultDocument);
   const [selectedColor, setSelectedColor] = useState('#000000');
   const [secondaryColor] = useState('#ffffff');
   const [tool, setTool] = useState<Tool>('brush');
   const [projectName, setProjectName] = useState('Untitled');
   const [activeProjectId, setActiveProjectId] = useState<number | undefined>(undefined);
-  const [cursorCell, setCursorCell] = useState<Cell | null>(null);
 
   const canSave = useMemo(() => projectName.trim().length > 0, [projectName]);
+  const [status, setStatus] = useState('Ready');
 
-  const { projects, status, setStatus, handleNew, handleClear, handleSave, handleLoad, handleDelete, handleExport } =
+  const { projectDocument, canUndo, canRedo, setProjectDocument, applyProjectDocumentChange, undo, redo } =
+    useEditorDocument({
+      createInitialDocument: createDefaultDocument,
+      setStatus
+    });
+
+  const { projects, handleNew, handleClear, handleSave, handleLoad, handleDelete, handleExport } =
     useProjectActions({
       activeProjectId,
       projectName,
       projectDocument,
       canSave,
+      setStatus,
       setActiveProjectId,
       setProjectName,
       setProjectDocument
@@ -73,7 +78,7 @@ function App() {
     (cell: Cell) => {
       const nextColor = tool === 'eraser' ? EMPTY_COLOR : selectedColor;
 
-      setProjectDocument((previous) => {
+      applyProjectDocumentChange((previous) => {
         const result = paintDocumentCell(previous, cell, nextColor);
         if (!result.changed && result.reason) {
           setStatus(result.reason);
@@ -82,73 +87,15 @@ function App() {
         return result.document;
       });
     },
-    [selectedColor, setStatus, tool]
+    [applyProjectDocumentChange, selectedColor, setStatus, tool]
   );
 
-  const updateCursor = useCallback((event: PointerEvent<HTMLCanvasElement>) => {
-    const canvas = canvasRef.current;
-    if (!canvas) {
-      setCursorCell(null);
-      return null;
-    }
-
-    const cell = cellFromPointer(canvas, event.clientX, event.clientY);
-    setCursorCell(cell);
-    return cell;
-  }, []);
-
-  const handlePointerDown = useCallback(
-    (event: PointerEvent<HTMLCanvasElement>) => {
-      const canvas = canvasRef.current;
-      if (!canvas) {
-        return;
-      }
-
-      canvas.setPointerCapture(event.pointerId);
-      isPaintingRef.current = true;
-
-      const cell = updateCursor(event);
-      if (cell) {
-        paintCell(cell);
-      }
-    },
-    [paintCell, updateCursor]
-  );
-
-  const handlePointerMove = useCallback(
-    (event: PointerEvent<HTMLCanvasElement>) => {
-      const cell = updateCursor(event);
-      if (!isPaintingRef.current || !cell) {
-        return;
-      }
-
-      paintCell(cell);
-    },
-    [paintCell, updateCursor]
-  );
-
-  const handlePointerUp = useCallback(
-    (event: PointerEvent<HTMLCanvasElement>) => {
-      const canvas = canvasRef.current;
-      if (canvas && canvas.hasPointerCapture(event.pointerId)) {
-        canvas.releasePointerCapture(event.pointerId);
-      }
-
-      isPaintingRef.current = false;
-      updateCursor(event);
-    },
-    [updateCursor]
-  );
-
-  const handlePointerLeave = useCallback((event: PointerEvent<HTMLCanvasElement>) => {
-    const canvas = canvasRef.current;
-    if (canvas && canvas.hasPointerCapture(event.pointerId)) {
-      canvas.releasePointerCapture(event.pointerId);
-    }
-
-    isPaintingRef.current = false;
-    setCursorCell(null);
-  }, []);
+  const { cursorCell, handlePointerDown, handlePointerMove, handlePointerUp, handlePointerLeave } =
+    useCanvasPainting({
+      canvasRef,
+      getCellFromPointer: cellFromPointer,
+      onPaintCell: paintCell
+    });
 
   const activeLayer = projectDocument.layers.find((layer) => layer.id === projectDocument.activeLayerId) ?? null;
 
@@ -160,6 +107,8 @@ function App() {
           activeProjectId={activeProjectId}
           projects={projects}
           canSave={canSave}
+          canUndo={canUndo}
+          canRedo={canRedo}
           onProjectNameChange={setProjectName}
           onNew={handleNew}
           onClear={handleClear}
@@ -167,6 +116,8 @@ function App() {
           onSave={handleSave}
           onDelete={handleDelete}
           onExport={handleExport}
+          onUndo={undo}
+          onRedo={redo}
         />
       }
       leftSidebar={
@@ -208,28 +159,30 @@ function App() {
             canMoveLayerDown={
               !!activeLayer && projectDocument.layers.findIndex((layer) => layer.id === activeLayer.id) > 0
             }
-            onAddLayer={() => setProjectDocument((previous) => addLayer(previous))}
+            onAddLayer={() => applyProjectDocumentChange((previous) => addLayer(previous))}
             onDeleteLayer={() =>
-              setProjectDocument((previous) => deleteLayer(previous, previous.activeLayerId))
+              applyProjectDocumentChange((previous) => deleteLayer(previous, previous.activeLayerId))
             }
             onMoveLayerUp={() =>
-              setProjectDocument((previous) => moveLayer(previous, previous.activeLayerId, 'up'))
+              applyProjectDocumentChange((previous) => moveLayer(previous, previous.activeLayerId, 'up'))
             }
             onMoveLayerDown={() =>
-              setProjectDocument((previous) => moveLayer(previous, previous.activeLayerId, 'down'))
+              applyProjectDocumentChange((previous) => moveLayer(previous, previous.activeLayerId, 'down'))
             }
-            onSelectLayer={(layerId) => setProjectDocument((previous) => setActiveLayer(previous, layerId))}
+            onSelectLayer={(layerId) =>
+              applyProjectDocumentChange((previous) => setActiveLayer(previous, layerId))
+            }
             onToggleVisibility={(layerId, visible) =>
-              setProjectDocument((previous) => setLayerVisibility(previous, layerId, visible))
+              applyProjectDocumentChange((previous) => setLayerVisibility(previous, layerId, visible))
             }
             onToggleLock={(layerId, locked) =>
-              setProjectDocument((previous) => setLayerLock(previous, layerId, locked))
+              applyProjectDocumentChange((previous) => setLayerLock(previous, layerId, locked))
             }
             onRenameLayer={(layerId, name) =>
-              setProjectDocument((previous) => renameLayer(previous, layerId, name))
+              applyProjectDocumentChange((previous) => renameLayer(previous, layerId, name))
             }
             onSetOpacity={(opacity) =>
-              setProjectDocument((previous) => setLayerOpacity(previous, previous.activeLayerId, opacity))
+              applyProjectDocumentChange((previous) => setLayerOpacity(previous, previous.activeLayerId, opacity))
             }
           />
         </>
