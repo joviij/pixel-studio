@@ -1,8 +1,9 @@
 # Pixel Studio MVP
 
-A minimal desktop pixel art editor built with Electron + Vite + React + TypeScript. This is an entirely vibe-coded app. Part of the goal was to just test how fast + semi-good vibe coded output app can product working applications. 
+A minimal desktop pixel art editor built with Electron + Vite + React + TypeScript. This is an entirely vibe-coded app. Part of the goal was to just test how fast and how good vibe coded output would be especially when tacking on new features. 
 
-Does vibe-coding actually speed up development? Or will it lead to hidden costs in the name of operational pain eventually cause "vibe-coded" apps to have to go through a manual write/inspection. One thing to note is the agent (Codex) was not really trained on my personal coding standards and this is sort of out of the box default behavior. 
+
+One thing to note is the agent (Codex) was not really trained on my personal coding standards and this is sort of out of the box default behavior. 
 
 ## Tech Stack
 
