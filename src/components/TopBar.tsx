@@ -57,24 +57,6 @@ export function TopBar({
 
   return (
     <header className="top-bar">
-      <div className="menu-row" role="menubar" aria-label="Application menu">
-        <button type="button" className="menu-button" title="File menu">
-          File
-        </button>
-        <button type="button" className="menu-button" title="Edit menu">
-          Edit
-        </button>
-        <button type="button" className="menu-button" title="View menu">
-          View
-        </button>
-        <button type="button" className="menu-button" title="Image menu">
-          Image
-        </button>
-        <button type="button" className="menu-button" title="Help menu">
-          Help
-        </button>
-      </div>
-
       <div className="action-row">
         <div className="action-group">
           <button type="button" className="icon-button" onClick={onNew} title="New project">

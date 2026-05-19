@@ -12,7 +12,6 @@
   border-bottom: 1px solid var(--border);
 }
 
-.menu-row,
 .action-row {
   display: flex;
   align-items: center;
@@ -20,11 +19,6 @@
   padding: var(--spacing) calc(var(--spacing) * 1.5);
 }
 
-.menu-row {
-  border-bottom: 1px solid var(--border);
-}
-
-.menu-button,
 .icon-button,
 .project-controls input,
 .project-controls select,
@@ -36,7 +30,6 @@
   color: var(--text-main);
 }
 
-.menu-button,
 .icon-button {
   padding: 6px 10px;
   cursor: pointer;
@@ -53,12 +46,10 @@
   padding: 6px;
 }
 
-.menu-button:hover,
 .icon-button:hover {
   background: var(--hover);
 }
 
-.menu-button:disabled,
 .icon-button:disabled,
 .tool-button:disabled,
 .layer-controls select:disabled {
