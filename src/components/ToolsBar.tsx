@@ -19,13 +19,7 @@ const TOOL_ITEMS: ToolItem[] = [
   { id: 'brush', label: 'Brush', title: 'Brush tool', value: 'brush', icon: 'brush' },
   { id: 'eraser', label: 'Eraser', title: 'Eraser tool', value: 'eraser', icon: 'eraser' },
   { id: 'fill', label: 'Fill', title: 'Fill tool (MVP placeholder)', disabled: true, icon: 'fill' },
-  {
-    id: 'eyedropper',
-    label: 'Eyedropper',
-    title: 'Eyedropper tool (MVP placeholder)',
-    disabled: true,
-    icon: 'eyedropper'
-  },
+  { id: 'eyedropper', label: 'Eyedropper', title: 'Eyedropper tool', value: 'eyedropper', icon: 'eyedropper' },
   { id: 'line', label: 'Ln', title: 'Line tool (MVP placeholder)', disabled: true },
   { id: 'select', label: 'Se', title: 'Select tool (MVP placeholder)', disabled: true },
   { id: 'move', label: 'Mv', title: 'Move tool (MVP placeholder)', disabled: true },

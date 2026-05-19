@@ -20,6 +20,7 @@ import {
   createDefaultDocument,
   deleteLayer,
   drawDocument,
+  getVisibleDocumentCellColor,
   moveLayer,
   paintDocumentCell,
   renameLayer,
@@ -74,8 +75,20 @@ function App() {
     drawDocument(ctx, projectDocument);
   }, [projectDocument]);
 
-  const paintCell = useCallback(
+  const applyCellTool = useCallback(
     (cell: Cell) => {
+      if (tool === 'eyedropper') {
+        const color = getVisibleDocumentCellColor(projectDocument, cell);
+        if (!color) {
+          setStatus('No color at selected cell.');
+          return;
+        }
+
+        setSelectedColor(color);
+        setStatus(`Picked ${color}`);
+        return;
+      }
+
       const nextColor = tool === 'eraser' ? EMPTY_COLOR : selectedColor;
 
       applyProjectDocumentChange((previous) => {
@@ -87,14 +100,14 @@ function App() {
         return result.document;
       });
     },
-    [applyProjectDocumentChange, selectedColor, setStatus, tool]
+    [applyProjectDocumentChange, projectDocument, selectedColor, setStatus, tool]
   );
 
   const { cursorCell, handlePointerDown, handlePointerMove, handlePointerUp, handlePointerLeave } =
     useCanvasPainting({
       canvasRef,
       getCellFromPointer: cellFromPointer,
-      onPaintCell: paintCell
+      onPaintCell: applyCellTool
     });
 
   const activeLayer = projectDocument.layers.find((layer) => layer.id === projectDocument.activeLayerId) ?? null;

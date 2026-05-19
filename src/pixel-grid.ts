@@ -3,7 +3,7 @@ export const PIXEL_COUNT = GRID_SIZE * GRID_SIZE;
 export const SCALE = 16;
 export const EMPTY_COLOR = 'transparent';
 
-export type Tool = 'brush' | 'eraser';
+export type Tool = 'brush' | 'eraser' | 'eyedropper';
 
 export type Cell = {
   x: number;
@@ -151,6 +151,24 @@ export function renderDocumentToExportCanvas(projectDocument: ProjectDocument): 
   drawPixelLayers(ctx, projectDocument.layers, 1);
 
   return exportCanvas;
+}
+
+export function getVisibleDocumentCellColor(document: ProjectDocument, cell: Cell): string | null {
+  const idx = indexFromCell(cell);
+
+  for (let layerIndex = document.layers.length - 1; layerIndex >= 0; layerIndex -= 1) {
+    const layer = document.layers[layerIndex];
+    if (!layer || !layer.visible || layer.opacity <= 0) {
+      continue;
+    }
+
+    const color = layer.pixels[idx];
+    if (color && color !== EMPTY_COLOR) {
+      return color;
+    }
+  }
+
+  return null;
 }
 
 function findLayerIndex(layers: Layer[], layerId: string): number {
